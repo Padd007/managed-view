@@ -89,7 +89,6 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     }
 
     func found(code: String) {
-        NSLog("QR Code viewed by camera: \(code)")
         
         NotificationCenter.default.post(name: ViewController.notificationCamera, object: nil, userInfo: ["qrCode": code])
      
@@ -97,4 +96,5 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     }
 
 }
+
 

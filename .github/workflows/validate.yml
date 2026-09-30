@@ -1,0 +1,22 @@
+name: Validate kiosk app
+on:
+  pull_request:
+  push:
+    branches: [main, codex/secure-club-kiosk]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test configuration and navigation rules
+        run: bash Tests/run-tests.sh
+      - name: Build unsigned iPad simulator app
+        run: >-
+          xcodebuild -project "Managed View.xcodeproj"
+          -scheme "Managed View" -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/ManagedViewBuild"
+          CODE_SIGNING_ALLOWED=NO build
