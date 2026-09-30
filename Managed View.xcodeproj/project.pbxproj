@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        A10000000000000000000001 /* KioskConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* KioskConfiguration.swift */; };
 		933DFBBA1EB117B1002EEE14 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 933DFBB91EB117B1002EEE14 /* Assets.xcassets */; };
 		933DFBBD1EB117E4002EEE14 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933DFBBB1EB117E4002EEE14 /* ViewController.swift */; };
 		933DFBBE1EB117E4002EEE14 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933DFBBC1EB117E4002EEE14 /* AppDelegate.swift */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+        A10000000000000000000002 /* KioskConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KioskConfiguration.swift; sourceTree = "<group>"; };
 		933DFBB91EB117B1002EEE14 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = "Managed View/Assets.xcassets"; sourceTree = SOURCE_ROOT; };
 		933DFBBB1EB117E4002EEE14 /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = ViewController.swift; path = "Managed View/ViewController.swift"; sourceTree = SOURCE_ROOT; };
 		933DFBBC1EB117E4002EEE14 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = "Managed View/AppDelegate.swift"; sourceTree = SOURCE_ROOT; };
@@ -72,6 +74,7 @@
 				938BD5EE2A76D342001DBC8E /* ScannerViewController.swift */,
 				9356E40C1EC26AF400AFECDB /* img */,
 				933DFBBB1EB117E4002EEE14 /* ViewController.swift */,
+                A10000000000000000000002 /* KioskConfiguration.swift */,
 				933DFBBC1EB117E4002EEE14 /* AppDelegate.swift */,
 				933DFBB91EB117B1002EEE14 /* Assets.xcassets */,
 				933DFBBF1EB11818002EEE14 /* Main.storyboard */,
@@ -165,6 +168,7 @@
 				933DFBBE1EB117E4002EEE14 /* AppDelegate.swift in Sources */,
 				938BD5EF2A76D342001DBC8E /* ScannerViewController.swift in Sources */,
 				933DFBBD1EB117E4002EEE14 /* ViewController.swift in Sources */,
+                A10000000000000000000001 /* KioskConfiguration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,3 +403,4 @@
 	};
 	rootObject = BABE64291D635D7700F4EC2B /* Project object */;
 }
+

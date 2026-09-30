@@ -1,4 +1,14 @@
-# Managed View
+# Managed View — club kiosk fork
+
+This fork adds local serial-to-club URL resolution and security hardening for Intune-managed iPads.
+
+**Start with [the Intune configuration and testing guide](docs/INTUNE-CLUB-KIOSK.md).**
+The app now waits for configuration, requires HTTPS with normal certificate validation, and restricts navigation to approved hosts.
+The upstream trust-bypass, external deep-link and Autonomous Single App Mode unlock features described below are disabled in this fork.
+`DISABLE_APP_CONFIG_LISTENER` is also ignored, so policy removal/changes cannot leave stale configuration active.
+The original upstream documentation follows for attribution and reference; the fork guide takes precedence.
+
+## Upstream Managed View
 Simple app leveraging Managed App Config and Anonymous Single Add Mode (ASAM).
 
 Available free in the App Store.
@@ -121,3 +131,4 @@ MDM solution such as Jamf Pro or Jamf School to enable managed app configuration
 Please leave feedback and/or comments on how this could be improved!
 
 Thanks! Aaron
+
