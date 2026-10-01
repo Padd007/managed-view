@@ -200,7 +200,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
       activeHomeURL = nil
       WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
                                             modifiedSince: .distantPast) {}
-      showConfigurationMessage("Waiting for configuration from Intune.\nContact IT if this message remains.", showsLogo: true)
+      showConfigurationMessage("Waiting for configuration.\nContact IT if this message remains.", showsLogo: true)
       return
     }
     do {
