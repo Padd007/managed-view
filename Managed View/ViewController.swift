@@ -18,20 +18,13 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   private var kioskConfiguration: KioskConfiguration?
   private var configurationGeneration = 0
   private var configurationMessage: UILabel?
+  private var configurationMessageContainer: UIStackView?
+  private var configurationLogo: UIImageView?
   private var configurationObserver: NSObjectProtocol?
   private var activeHomeURL: URL?
   private var resumeAfterInterruption = false
   
   
-  
-  // Add constraint reference for dynamic updates
-  private var webViewBottomConstraint: NSLayoutConstraint?
-  
-  // Add flag to prevent multiple toolbar setups
-  private var isSettingUpToolbar = false
-  
-  // Reference to the storyboard toolbar
-  @IBOutlet weak var storyboardToolbar: UIToolbar?
   
   // Loading indicator components
   private var loadingIndicator: UIActivityIndicatorView?
@@ -57,7 +50,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     var homeURL: URL?                     // BROWSER MODE ONLY: URL for home button
     var privateBrowsing: String           // private browsing mode
     var resetTimer: Int                   // timer in seconds to reset session
-    var qrCode: String                    // enable QR Code reader
     var launchDelay: Int                  // initial page load delayed by seconds
     var detectScroll: String              // reset timer if scrolling
     var redirect: String                  // redirect new tabs / pop-ups to webview
@@ -85,7 +77,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
                       homeURL: nil,
                       privateBrowsing: "OFF",
                       resetTimer: 0,
-                      qrCode: "OFF",
                       launchDelay: 0,
                       detectScroll: "ON",
                       redirect: "OFF",
@@ -106,8 +97,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   private var countdownTimer: Timer?
   private var countdownSeconds: Int = 0
   
-  // version 2.5 - observe when camera reads QR Code
-  static let notificationCamera = Notification.Name("qrCode")
   
   
   // WKWebView setup via code - required for < iOS 11
@@ -147,7 +136,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     
 
     
-    NotificationCenter.default.addObserver(self, selector: #selector(onNotification(notification:)), name: ViewController.notificationCamera, object: nil)
   }
   
   override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -207,13 +195,12 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     additionalWebViews.removeAll()
     hideLoadingIndicator()
     navigationController?.isNavigationBarHidden = true
-    storyboardToolbar?.isHidden = true
 
     guard !values.isEmpty else {
       activeHomeURL = nil
       WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
                                             modifiedSince: .distantPast) {}
-      showConfigurationMessage("Waiting for configuration from Intune.\nContact IT if this message remains.")
+      showConfigurationMessage("Waiting for configuration from Intune.\nContact IT if this message remains.", showsLogo: true)
       return
     }
     do {
@@ -246,7 +233,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     config.browserMode = validated.switches["BROWSER_MODE"] ?? "OFF"
     config.browserModeNoEdit = validated.switches["BROWSER_BAR_NO_EDIT"] ?? "OFF"
     config.privateBrowsing = validated.switches["PRIVATE_BROWSING"] ?? "OFF"
-    config.qrCode = validated.switches["QR_CODE"] ?? "OFF"
     config.detectScroll = validated.switches["DETECT_SCROLL"] ?? "OFF"
     config.redirect = validated.switches["REDIRECT_SUPPORT"] ?? "OFF"
     config.autoOpenPopup = validated.switches["AUTO_OPEN_POPUP"] ?? "OFF"
@@ -259,32 +245,57 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     // Intune owns device lockdown. Website URLs cannot release Single App Mode.
     DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(config.launchDelay)) { [weak self] in
       guard let self = self, self.configurationGeneration == generation else { return }
-      self.configurationMessage?.isHidden = true
+      self.configurationMessageContainer?.isHidden = true
       self.createWebView(isPrivate: self.config.privateBrowsing == "ON")
       self.checkBrowserMode()
       self.setBrightness()
     }
   }
 
-  private func showConfigurationMessage(_ text: String) {
-    if configurationMessage == nil {
+  private func showConfigurationMessage(_ text: String, showsLogo: Bool = false) {
+    if configurationMessageContainer == nil {
+      let logo = UIImageView(image: UIImage(named: "BuzzLogo"))
+      logo.contentMode = .scaleAspectFit
+      logo.isAccessibilityElement = true
+      logo.accessibilityLabel = "Buzz Bingo"
+      logo.translatesAutoresizingMaskIntoConstraints = false
+
       let label = UILabel()
       label.numberOfLines = 0
       label.textAlignment = .center
       label.textColor = .label
       label.backgroundColor = .systemBackground
-      label.translatesAutoresizingMaskIntoConstraints = false
-      view.addSubview(label)
+      label.font = .preferredFont(forTextStyle: .body)
+      label.adjustsFontForContentSizeCategory = true
+
+      let container = UIStackView(arrangedSubviews: [logo, label])
+      container.axis = .vertical
+      container.alignment = .center
+      container.spacing = 24
+      container.translatesAutoresizingMaskIntoConstraints = false
+      view.addSubview(container)
+      let preferredLogoWidth = logo.widthAnchor.constraint(equalToConstant: 240)
+      preferredLogoWidth.priority = .defaultHigh
+      let squareLogo = logo.heightAnchor.constraint(equalTo: logo.widthAnchor)
+      squareLogo.priority = .defaultHigh
       NSLayoutConstraint.activate([
-        label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-        label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-        label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+        container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+        container.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+        label.widthAnchor.constraint(equalTo: container.widthAnchor),
+        logo.widthAnchor.constraint(lessThanOrEqualTo: container.widthAnchor),
+        logo.heightAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.heightAnchor, multiplier: 0.4),
+        preferredLogoWidth,
+        squareLogo
       ])
       configurationMessage = label
+      configurationLogo = logo
+      configurationMessageContainer = container
     }
     configurationMessage?.text = text
-    configurationMessage?.isHidden = false
-    if let label = configurationMessage { view.bringSubviewToFront(label) }
+    configurationLogo?.isHidden = !showsLogo
+    configurationMessageContainer?.isHidden = false
+    if let container = configurationMessageContainer { view.bringSubviewToFront(container) }
   }
 
   // MARK: - Brightness Control
@@ -750,7 +761,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   private func createWebView(isPrivate: Bool) {
     // Clean up any existing webView
     webView?.removeFromSuperview()
-    webViewBottomConstraint = nil
     
     let webConfiguration = WKWebViewConfiguration()
     if isPrivate {
@@ -784,24 +794,11 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     view.addSubview(webView)
     webView.translatesAutoresizingMaskIntoConstraints = false
     
-    // Set up constraints - use different bottom constraint based on QR code setting
-    let bottomAnchor: NSLayoutYAxisAnchor
-    if config.qrCode == "ON" {
-      // Respect safe area to avoid toolbar overlap
-      bottomAnchor = view.safeAreaLayoutGuide.bottomAnchor
-    } else {
-      // Extend to bottom of screen
-      bottomAnchor = view.bottomAnchor
-    }
-    
-    // Create and store the bottom constraint for later updates
-    webViewBottomConstraint = webView.bottomAnchor.constraint(equalTo: bottomAnchor)
-    
     NSLayoutConstraint.activate([
       webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
       webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      webViewBottomConstraint!
+      webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
     
     webView.scrollView.delegate = self
@@ -872,62 +869,11 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
       navigationController?.hidesBarsOnSwipe = false
     }
     
-    // Always hide the navigation controller's toolbar since we use the storyboard one
     navigationController?.isToolbarHidden = true
     self.toolbarItems = nil
-    
-    // Find the storyboard toolbar
-    var storyboardToolbar: UIToolbar?
-    for subview in view.subviews {
-      if let toolbar = subview as? UIToolbar {
-        storyboardToolbar = toolbar
-        break
-      }
-    }
-    
-    if config.qrCode == "ON" {
-      storyboardToolbar?.isHidden = false
-      updateWebViewBottomConstraint(usesSafeArea: true)
-    } else {
-      storyboardToolbar?.isHidden = true
-      updateWebViewBottomConstraint(usesSafeArea: false)
-    }
-    
     view.layoutIfNeeded()
   }
-  
-  private func updateWebViewBottomConstraint(usesSafeArea: Bool) {
-    guard let webView = webView, let bottomConstraint = webViewBottomConstraint else { return }
-    
-    // Find the storyboard toolbar to get its position
-    var storyboardToolbar: UIToolbar?
-    for subview in view.subviews {
-      if let toolbar = subview as? UIToolbar {
-        storyboardToolbar = toolbar
-        break
-      }
-    }
-    
-    // Deactivate current constraint
-    bottomConstraint.isActive = false
-    
-    // Create new constraint with appropriate anchor
-    let newBottomAnchor: NSLayoutYAxisAnchor
-    if usesSafeArea && storyboardToolbar?.isHidden == false {
-      // If toolbar is visible, position web view above it
-      newBottomAnchor = storyboardToolbar?.topAnchor ?? view.safeAreaLayoutGuide.bottomAnchor
-    } else {
-      // Extend to bottom of screen when toolbar is hidden
-      newBottomAnchor = view.bottomAnchor
-    }
-    
-    webViewBottomConstraint = webView.bottomAnchor.constraint(equalTo: newBottomAnchor)
-    webViewBottomConstraint?.isActive = true
-  }
-  
-  @objc func presentCamera() {
-    performSegue(withIdentifier: "cameraSeque", sender: nil)
-  }
+
   // BROWSER MODE ONLY: 4 connectors to UI
   @IBAction func goBack(_ sender: Any) {
     provideBrowserButtonFeedback(for: sender)
@@ -1002,7 +948,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
     guard isCurrentBrowser(webView), kioskConfiguration != nil else { return }
-    configurationMessage?.isHidden = true
+    configurationMessageContainer?.isHidden = true
     // Hide loading indicator when page finishes loading
     hideLoadingIndicator()
     
@@ -1083,22 +1029,6 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     }
   }
   
-  // version 2.5 - observe when camera reads QR Code
-  @objc func onNotification(notification:Notification) {
-    if let urlString = notification.userInfo?["qrCode"] as? String {
-      let url = URL(string: urlString)
-      if let url = url, kioskConfiguration?.permits(url) == true {
-        let generation = configurationGeneration
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
-          guard self.configurationGeneration == generation, self.kioskConfiguration?.permits(url) == true else { return }
-          // Show loading indicator when loading QR code URL
-          self.showLoadingIndicator()
-          self.webView?.load(URLRequest(url: url))
-        })
-      }
-    }
-  }
-  
   func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
     hideLoadingIndicator()
     let failure = error as NSError
@@ -1118,7 +1048,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
       guard let self = self, let webView = webView,
             self.configurationGeneration == generation,
             let home = self.kioskConfiguration?.homeURL else { return }
-      self.configurationMessage?.isHidden = true
+      self.configurationMessageContainer?.isHidden = true
       webView.load(URLRequest(url: home))
     }
   }
