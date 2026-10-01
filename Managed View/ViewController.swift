@@ -18,6 +18,8 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   private var kioskConfiguration: KioskConfiguration?
   private var configurationGeneration = 0
   private var configurationMessage: UILabel?
+  private var configurationMessageContainer: UIStackView?
+  private var configurationLogo: UIImageView?
   private var configurationObserver: NSObjectProtocol?
   private var activeHomeURL: URL?
   private var resumeAfterInterruption = false
@@ -198,7 +200,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
       activeHomeURL = nil
       WKWebsiteDataStore.default().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(),
                                             modifiedSince: .distantPast) {}
-      showConfigurationMessage("Waiting for configuration from Intune.\nContact IT if this message remains.")
+      showConfigurationMessage("Waiting for configuration from Intune.\nContact IT if this message remains.", showsLogo: true)
       return
     }
     do {
@@ -243,32 +245,57 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
     // Intune owns device lockdown. Website URLs cannot release Single App Mode.
     DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(config.launchDelay)) { [weak self] in
       guard let self = self, self.configurationGeneration == generation else { return }
-      self.configurationMessage?.isHidden = true
+      self.configurationMessageContainer?.isHidden = true
       self.createWebView(isPrivate: self.config.privateBrowsing == "ON")
       self.checkBrowserMode()
       self.setBrightness()
     }
   }
 
-  private func showConfigurationMessage(_ text: String) {
-    if configurationMessage == nil {
+  private func showConfigurationMessage(_ text: String, showsLogo: Bool = false) {
+    if configurationMessageContainer == nil {
+      let logo = UIImageView(image: UIImage(named: "BuzzLogo"))
+      logo.contentMode = .scaleAspectFit
+      logo.isAccessibilityElement = true
+      logo.accessibilityLabel = "Buzz Bingo"
+      logo.translatesAutoresizingMaskIntoConstraints = false
+
       let label = UILabel()
       label.numberOfLines = 0
       label.textAlignment = .center
       label.textColor = .label
       label.backgroundColor = .systemBackground
-      label.translatesAutoresizingMaskIntoConstraints = false
-      view.addSubview(label)
+      label.font = .preferredFont(forTextStyle: .body)
+      label.adjustsFontForContentSizeCategory = true
+
+      let container = UIStackView(arrangedSubviews: [logo, label])
+      container.axis = .vertical
+      container.alignment = .center
+      container.spacing = 24
+      container.translatesAutoresizingMaskIntoConstraints = false
+      view.addSubview(container)
+      let preferredLogoWidth = logo.widthAnchor.constraint(equalToConstant: 240)
+      preferredLogoWidth.priority = .defaultHigh
+      let squareLogo = logo.heightAnchor.constraint(equalTo: logo.widthAnchor)
+      squareLogo.priority = .defaultHigh
       NSLayoutConstraint.activate([
-        label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-        label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-        label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+        container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+        container.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+        label.widthAnchor.constraint(equalTo: container.widthAnchor),
+        logo.widthAnchor.constraint(lessThanOrEqualTo: container.widthAnchor),
+        logo.heightAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.heightAnchor, multiplier: 0.4),
+        preferredLogoWidth,
+        squareLogo
       ])
       configurationMessage = label
+      configurationLogo = logo
+      configurationMessageContainer = container
     }
     configurationMessage?.text = text
-    configurationMessage?.isHidden = false
-    if let label = configurationMessage { view.bringSubviewToFront(label) }
+    configurationLogo?.isHidden = !showsLogo
+    configurationMessageContainer?.isHidden = false
+    if let container = configurationMessageContainer { view.bringSubviewToFront(container) }
   }
 
   // MARK: - Brightness Control
@@ -921,7 +948,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
   
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
     guard isCurrentBrowser(webView), kioskConfiguration != nil else { return }
-    configurationMessage?.isHidden = true
+    configurationMessageContainer?.isHidden = true
     // Hide loading indicator when page finishes loading
     hideLoadingIndicator()
     
@@ -1021,7 +1048,7 @@ class ViewController: UIViewController, UITextFieldDelegate, WKUIDelegate, WKNav
       guard let self = self, let webView = webView,
             self.configurationGeneration == generation,
             let home = self.kioskConfiguration?.homeURL else { return }
-      self.configurationMessage?.isHidden = true
+      self.configurationMessageContainer?.isHidden = true
       webView.load(URLRequest(url: home))
     }
   }
