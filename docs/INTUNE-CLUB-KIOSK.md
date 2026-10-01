@@ -48,7 +48,7 @@ If your URL contains multiple query parameters, use `&amp;` instead of `&` in XM
 
 - Normal iPadOS certificate validation always applies. `DISABLE_TRUST` is ignored; there is no certificate bypass.
 - HTTPS is required, using the default port or explicit port 443. URLs with embedded credentials, unresolved placeholders or malformed hostnames are rejected.
-- Website navigation, redirects checked by WebKit delegates, QR destinations and popups must use the homepage host or an exact additional allowed hostname. Subdomains are **not** automatically allowed. Do not list a URL, wildcard or port in `ALLOWED_HOSTS`.
+- Website navigation, redirects checked by WebKit delegates and popups must use the homepage host or an exact additional allowed hostname. Subdomains are **not** automatically allowed. Do not list a URL, wildcard or port in `ALLOWED_HOSTS`.
 - This is a browser navigation restriction, **not a network firewall**. It does not restrict every image, script, fetch request or other subresource loaded by approved web content. The website and any required network-level controls still need review.
 - No developer-hosted fallback page. Missing configuration shows a local waiting message; invalid or unmapped configuration shows a local error and removes the previous browser.
 - External `managedview://` deep links are disabled. Intune controls the destination.
@@ -56,7 +56,8 @@ If your URL contains multiple query parameters, use `&amp;` instead of `&` in XM
 - Application debug logging of URLs, configuration and QR values is removed. This does not control logging performed by the website or operating system.
 - Serial matching ignores surrounding whitespace and letter case. Club codes must contain 1–32 ASCII letters, digits, hyphens or underscores. Duplicate serials after normalisation are rejected.
 - Existing UI switches remain ON/OFF strings; malformed types are rejected. `LAUNCH_DELAY` allows 0–300 seconds, reset timers 0–86400 seconds and brightness -1–100. Warning time must be smaller than reset time.
-- Optional QR scanning, browser navigation controls and popup support remain off by default. `REDIRECT_SUPPORT=ALT` allows at most three additional web views.
+- The QR scanner, camera button and camera permission declaration have been removed. Legacy `QR_CODE` settings are ignored.
+- Optional browser navigation controls and popup support remain off by default. `REDIRECT_SUPPORT=ALT` allows at most three additional web views.
 - The app still uses Apple WebKit. Keep iPadOS updated independently of app updates.
 
 ## Development tests
@@ -87,7 +88,7 @@ Before production, test on a managed physical iPad:
 4. Remove/reapply the policy; browsing stops and then recovers.
 5. Change a device's club while it has an active session; old history/session is cleared and the correct page appears.
 6. Invalid/self-signed certificates fail, including when a legacy `DISABLE_TRUST` value is supplied.
-7. Off-list links, redirects, QR URLs and popups are blocked; approved login redirects still work.
+7. Off-list links, redirects and popups are blocked; approved login redirects still work.
 8. Test restart, Wi-Fi loss/recovery and the real website's authentication, forms and session clearing while locked by Intune.
 
 Automated checks do not replace physical-device, Intune, website or InfoSec review.

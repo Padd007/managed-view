@@ -25,7 +25,7 @@ struct KioskConfiguration {
 
         var switches: [String: String] = [:]
         for key in ["MAINTENANCE_MODE", "BROWSER_MODE", "BROWSER_BAR_NO_EDIT",
-                    "PRIVATE_BROWSING", "QR_CODE", "DETECT_SCROLL", "AUTO_OPEN_POPUP",
+                    "PRIVATE_BROWSING", "DETECT_SCROLL", "AUTO_OPEN_POPUP",
                     "RESET_TIMER_ON_HOME", "DECODE_URL"] {
             let value = try string(key, default: "OFF")
             guard value == "ON" || value == "OFF" else {
